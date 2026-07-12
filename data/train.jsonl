@@ -1,0 +1,65 @@
+{"instruction": "请解释什么是 LoRA。", "input": "", "output": "LoRA 是 Low-Rank Adaptation 的缩写，中文通常翻译为低秩适配。它是一种参数高效微调方法，常用于大语言模型微调。LoRA 的核心思想是冻结预训练模型的大部分参数，只在部分线性层中加入可训练的低秩矩阵，从而用较少的显存和参数完成模型适配。"}
+{"instruction": "LoRA 的英文全称是什么？", "input": "", "output": "LoRA 的英文全称是 Low-Rank Adaptation，中文通常翻译为低秩适配。它不是 Lightweight Recursive Operator Allocation，也不是其他类似说法。"}
+{"instruction": "LoRA 是 Lightweight Recursive Operator Allocation 吗？", "input": "", "output": "不是。LoRA 的正确全称是 Low-Rank Adaptation，中文是低秩适配。Lightweight Recursive Operator Allocation 是错误说法，不能作为 LoRA 的解释。"}
+{"instruction": "请用通俗语言解释 LoRA。", "input": "", "output": "可以把 LoRA 理解为给大模型加一个很小的可训练插件。原来的大模型参数基本不动，只训练这个小插件。这样既能让模型适应新任务，又不用像全参数微调那样消耗大量显存和存储空间。"}
+{"instruction": "请用技术语言解释 LoRA 的原理。", "input": "", "output": "LoRA 冻结原始权重矩阵 W，只学习一个低秩增量矩阵 ΔW。这个增量通常被分解为两个较小矩阵的乘积，即 ΔW = BA，其中秩 r 远小于原始矩阵维度。前向传播时等效权重为 W' = W + BA。由于只训练 A 和 B，因此可训练参数量显著减少。"}
+{"instruction": "LoRA 为什么可以减少显存占用？", "input": "", "output": "LoRA 省显存的主要原因是它冻结了原始大模型的大部分参数，只训练少量低秩适配参数。因此训练时不需要为全部模型参数保存梯度和优化器状态，显存占用远低于全参数微调。"}
+{"instruction": "LoRA 会修改原始模型参数吗？", "input": "", "output": "通常不会。标准 LoRA 微调会冻结原始模型参数，只训练额外插入的 LoRA adapter 参数。推理时基础模型和 LoRA adapter 一起工作，等效于对原模型产生一个低秩增量更新。"}
+{"instruction": "LoRA adapter 是完整模型吗？", "input": "", "output": "LoRA adapter 不是完整模型。它只包含微调过程中学到的少量低秩适配参数。使用时必须同时加载原始基础模型和 LoRA adapter，才能得到微调后的效果。"}
+{"instruction": "LoRA 和全参数微调有什么区别？", "input": "", "output": "全参数微调会更新模型的大部分或全部参数，因此显存、存储和计算开销较大。LoRA 则冻结原始模型参数，只训练少量低秩适配矩阵，因此更省显存、更容易保存和切换，也更适合个人电脑上的大模型微调实验。"}
+{"instruction": "LoRA 中的 r 参数是什么意思？", "input": "", "output": "LoRA 中的 r 表示低秩矩阵的秩。r 越大，可训练参数越多，表达能力越强，但显存占用和过拟合风险也会增加。r 越小，训练更省显存，但适配能力可能较弱。个人电脑上微调 3B 模型时，r 常用 4 或 8。"}
+{"instruction": "LoRA 中的 lora_alpha 是什么？", "input": "", "output": "lora_alpha 是 LoRA 更新的缩放系数。LoRA 的低秩更新通常会按照 alpha / r 的比例进行缩放。alpha 越大，LoRA adapter 对原始模型输出的影响越强；alpha 太大可能导致训练不稳定。"}
+{"instruction": "LoRA 中的 lora_dropout 有什么作用？", "input": "", "output": "lora_dropout 是作用在 LoRA 分支上的 dropout，用于缓解过拟合。对于小数据集微调，适当设置 lora_dropout，例如 0.05，可以让模型不要过度记忆训练样本。"}
+{"instruction": "请解释什么是 QLoRA。", "input": "", "output": "QLoRA 是 Quantized LoRA 的思想，即在量化后的基础模型上训练 LoRA adapter。它通常将基础模型以 4-bit 形式加载并冻结，只训练少量 LoRA 参数，从而显著降低显存占用，使个人消费级显卡也可以微调较大的语言模型。"}
+{"instruction": "QLoRA 和 LoRA 有什么区别？", "input": "", "output": "LoRA 通常在 FP16 或 BF16 基础模型上训练低秩适配参数，而 QLoRA 会先把基础模型量化到 4-bit，再训练 LoRA adapter。相比普通 LoRA，QLoRA 更省显存，适合 8GB 或 12GB 显存的消费级显卡。"}
+{"instruction": "QLoRA 为什么适合 RTX 4060 8GB 显卡？", "input": "", "output": "RTX 4060 只有 8GB 显存，直接全参数微调 3B 或 7B 模型很容易显存不足。QLoRA 将基础模型以 4-bit 量化方式加载，并只训练 LoRA adapter，大幅减少显存需求，因此适合在 8GB 显存上进行小规模 LLM 微调实验。"}
+{"instruction": "请解释什么是 4-bit 量化。", "input": "", "output": "4-bit 量化是指用 4 位数值近似表示模型权重，从而显著减少模型显存占用。相比 FP16 的 16 位表示，4-bit 可以大幅压缩权重存储。QLoRA 中常用 NF4 量化格式，它适合表示神经网络中近似正态分布的权重。"}
+{"instruction": "NF4 是什么？", "input": "", "output": "NF4 是 NormalFloat 4-bit 的缩写，是 QLoRA 中常用的一种 4-bit 量化格式。它根据神经网络权重通常近似正态分布的特点设计，相比普通 4-bit 量化更适合大模型权重量化。"}
+{"instruction": "bitsandbytes 在 QLoRA 中有什么作用？", "input": "", "output": "bitsandbytes 是一个用于低比特量化和低显存优化的库。在 QLoRA 中，它常用于以 4-bit 加载基础模型，并提供 paged_adamw_8bit 等节省显存的优化器，从而降低训练时的显存占用。"}
+{"instruction": "请解释 transformers 中 AutoTokenizer 的作用。", "input": "", "output": "AutoTokenizer 用于自动加载与模型匹配的 tokenizer。tokenizer 的作用是把自然语言文本转换成模型可以处理的 token ID，同时也可以把模型输出的 token ID 解码回自然语言文本。"}
+{"instruction": "请解释 transformers 中 AutoModelForCausalLM 的作用。", "input": "", "output": "AutoModelForCausalLM 用于自动加载因果语言模型。因果语言模型的训练目标是根据前面的 token 预测下一个 token，因此适合文本生成、聊天问答和续写等任务。"}
+{"instruction": "什么是 tokenizer？", "input": "", "output": "tokenizer 是文本和模型之间的转换器。它把输入文本切分并映射为 token ID，模型处理的是这些整数 ID；模型生成的 token ID 再通过 tokenizer 解码成可读文本。"}
+{"instruction": "什么是 chat template？", "input": "", "output": "chat template 是聊天模型使用的对话格式模板。它会把 system、user、assistant 等结构化消息转换成模型训练时熟悉的文本格式。不同模型的 chat template 可能不同，因此使用 Instruct 模型时应尽量调用 tokenizer.apply_chat_template。"}
+{"instruction": "为什么推理时要使用 add_generation_prompt=True？", "input": "", "output": "推理时设置 add_generation_prompt=True，会在输入末尾添加 assistant 开始生成的提示标记，告诉聊天模型接下来应该由助手回答。如果不添加，模型可能无法正确进入回答状态。"}
+{"instruction": "为什么训练时 add_generation_prompt 通常设为 False？", "input": "", "output": "训练样本中已经包含 assistant 的完整回答，因此通常不需要额外添加生成提示。训练时使用 add_generation_prompt=False，可以让样本保持完整的用户问题和助手答案格式。"}
+{"instruction": "什么是 Causal Language Model？", "input": "", "output": "Causal Language Model 是因果语言模型，它只能根据当前位置之前的 token 预测下一个 token。大多数自回归大语言模型，例如 GPT、LLaMA、Qwen，都属于因果语言模型。"}
+{"instruction": "model.generate 的作用是什么？", "input": "", "output": "model.generate 是 HuggingFace Transformers 中用于文本生成的函数。它会根据输入 token，不断预测并追加新的 token，直到达到最大长度或生成结束标记。常用参数包括 max_new_tokens、temperature、top_p 和 do_sample。"}
+{"instruction": "do_sample 参数是什么意思？", "input": "", "output": "do_sample 控制生成时是否使用随机采样。如果 do_sample=True，模型会根据概率分布随机选择下一个 token，回答更有多样性但也更容易幻觉。如果 do_sample=False，模型通常使用贪心解码，输出更稳定但可能更死板。"}
+{"instruction": "temperature 参数是什么意思？", "input": "", "output": "temperature 用于控制生成文本的随机性。temperature 越低，模型输出越保守、越确定；temperature 越高，输出越多样但也更容易出现错误。知识问答任务中通常建议使用较低 temperature 或直接 do_sample=False。"}
+{"instruction": "top_p 参数是什么意思？", "input": "", "output": "top_p 是 nucleus sampling 的参数。模型会只在累计概率达到 top_p 的候选 token 中采样。较小的 top_p 会让输出更保守，较大的 top_p 会让输出更多样。"}
+{"instruction": "为什么知识问答时建议 do_sample=False？", "input": "", "output": "知识问答更看重事实准确性，而不是创造性。do_sample=False 会减少随机性，使模型选择概率最高的 token，从而让回答更稳定，降低编造事实的概率。"}
+{"instruction": "什么是幻觉？", "input": "", "output": "大语言模型的幻觉是指模型生成了看似合理但实际错误或没有依据的内容。例如把 LoRA 错误解释成 Lightweight Recursive Operator Allocation，就是典型幻觉。"}
+{"instruction": "如何减少大语言模型幻觉？", "input": "", "output": "减少幻觉可以从几个方面入手：使用更高质量的训练数据，降低 temperature，知识问答时使用 do_sample=False，加入纠错样本，构建评测集，以及使用 RAG 检索增强，让模型基于可靠资料回答。"}
+{"instruction": "为什么小数据微调可能让模型变差？", "input": "", "output": "小数据微调容易导致过拟合。模型可能过度记忆少量训练样本，破坏原本已有的知识分布，甚至在专业术语上产生新的错误。因此小数据实验应降低学习率和训练轮数，并使用高质量数据。"}
+{"instruction": "微调数据越多越好吗？", "input": "", "output": "不一定。微调数据的质量比数量更重要。大量低质量、重复或错误的数据会让模型能力下降。理想的数据应该准确、清晰、覆盖多种问法，并与目标任务高度相关。"}
+{"instruction": "什么是 SFT？", "input": "", "output": "SFT 是 Supervised Fine-Tuning，即监督微调。它使用人工构造或筛选的指令-回答数据，让模型学习在给定用户指令时生成符合要求的回答。"}
+{"instruction": "SFTTrainer 是什么？", "input": "", "output": "SFTTrainer 是 TRL 库中用于监督微调语言模型的训练器。它可以简化文本格式化、tokenization、训练循环、日志记录和模型保存等步骤，常用于 instruction tuning。"}
+{"instruction": "PEFT 是什么？", "input": "", "output": "PEFT 是 Parameter-Efficient Fine-Tuning 的缩写，意思是参数高效微调。它是一类只训练少量参数来适配大模型的方法，LoRA 就是最常用的 PEFT 方法之一。"}
+{"instruction": "prepare_model_for_kbit_training 有什么作用？", "input": "", "output": "prepare_model_for_kbit_training 用于为低比特量化模型训练做准备。它通常会处理量化模型的梯度、LayerNorm 精度和输入 embedding 等问题，是 QLoRA 微调中常用的重要步骤。"}
+{"instruction": "gradient_accumulation_steps 是什么？", "input": "", "output": "gradient_accumulation_steps 是梯度累积步数。当显存有限、batch size 只能设得很小时，可以累计多次前向和反向传播的梯度，再进行一次优化器更新，从而模拟更大的有效 batch size。"}
+{"instruction": "per_device_train_batch_size 为什么在 8GB 显存上通常设为 1？", "input": "", "output": "大语言模型训练显存占用较高，8GB 显存很容易不足。将 per_device_train_batch_size 设为 1 可以降低单次前向和反向传播的显存占用，再配合 gradient_accumulation_steps 来获得较稳定的训练效果。"}
+{"instruction": "gradient_checkpointing 有什么作用？", "input": "", "output": "gradient_checkpointing 是一种用计算换显存的技术。它不会保存所有中间激活，而是在反向传播时重新计算部分激活，从而降低显存占用，但会让训练速度变慢。"}
+{"instruction": "为什么训练时要设置 model.config.use_cache=False？", "input": "", "output": "use_cache 主要用于推理时缓存 KV states 加速生成。训练时，特别是启用 gradient checkpointing 时，KV cache 可能造成额外显存占用或兼容问题，因此通常设置 model.config.use_cache=False。"}
+{"instruction": "什么是 CUDA out of memory？", "input": "", "output": "CUDA out of memory 表示 GPU 显存不足。训练大模型时，如果模型、输入序列、batch、激活值、梯度或优化器状态占用超过显存容量，就会出现这个错误。"}
+{"instruction": "QLoRA 训练时出现 CUDA out of memory 应该怎么办？", "input": "", "output": "可以尝试以下方法：将 max_seq_length 从 1024 降到 512；保持 per_device_train_batch_size=1；减小 LoRA 的 r，例如从 8 降到 4；减少 target_modules；开启 gradient_checkpointing；关闭其他占用 GPU 的进程；确认模型确实以 4-bit 加载。"}
+{"instruction": "如何检查 PyTorch 是否能使用 GPU？", "input": "", "output": "可以运行：python -c \"import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))\"。如果输出 True 并显示显卡名称，例如 NVIDIA GeForce RTX 4060，说明 PyTorch 可以使用 GPU。"}
+{"instruction": "如何查看显卡显存占用？", "input": "", "output": "可以在终端运行 nvidia-smi 查看显卡状态，包括显存占用、GPU 利用率、温度和正在使用 GPU 的进程。训练时也可以使用 watch -n 1 nvidia-smi 实时监控。"}
+{"instruction": "HuggingFace 模型下载太慢怎么办？", "input": "", "output": "可以设置 HuggingFace 镜像，例如在终端运行 export HF_ENDPOINT=https://hf-mirror.com。也可以将这行写入 ~/.bashrc，使其长期生效。"}
+{"instruction": "为什么 LoRA 微调后效果不一定更好？", "input": "", "output": "LoRA 只是微调方法，不保证效果一定提升。效果取决于基础模型能力、数据质量、数据规模、训练参数和评测方式。如果数据太少、错误较多或训练过度，微调后反而可能更差。"}
+{"instruction": "如何判断一次微调是否成功？", "input": "", "output": "应该构建一个固定评测集，对比微调前后模型在相同问题上的表现。不要只看单个问题。评估维度可以包括事实准确性、回答风格、领域覆盖、鲁棒性、是否减少幻觉以及是否出现灾难性遗忘。"}
+{"instruction": "为什么需要评测集？", "input": "", "output": "评测集用于客观比较微调前后的模型表现。如果只凭随机提问，很容易受到采样参数和个别案例影响。固定评测集可以帮助发现模型在哪些方面变好，哪些方面变差。"}
+{"instruction": "什么是灾难性遗忘？", "input": "", "output": "灾难性遗忘是指模型在学习新数据后，原本已经掌握的知识或能力下降。小数据、高学习率或过多训练轮数都可能导致灾难性遗忘。"}
+{"instruction": "小数据集微调时应该怎么设置学习率？", "input": "", "output": "小数据集微调时学习率不宜过大。对于 QLoRA 微调 3B 模型，可以从 5e-5 或 1e-4 开始尝试。如果学习率过高，模型可能快速过拟合或输出变得不稳定。"}
+{"instruction": "小数据集微调时应该训练多少个 epoch？", "input": "", "output": "小数据集微调不宜训练太多 epoch。几十到几百条数据时，可以先尝试 1 到 2 个 epoch。训练轮数过多容易过拟合，让模型记住训练样本而损害泛化能力。"}
+{"instruction": "为什么要保存 tokenizer？", "input": "", "output": "保存 tokenizer 可以确保后续推理时使用与训练时一致的分词和聊天模板。如果 tokenizer 不一致，模型输入格式可能发生变化，影响推理效果。"}
+{"instruction": "PeftModel.from_pretrained 的作用是什么？", "input": "", "output": "PeftModel.from_pretrained 用于把已经训练好的 LoRA adapter 加载到基础模型上。因为 LoRA adapter 不是完整模型，所以必须先加载基础模型，再加载 adapter。"}
+{"instruction": "Qwen2.5-3B-Instruct 适合 8GB 显存微调吗？", "input": "", "output": "Qwen2.5-3B-Instruct 比 7B 模型更适合 8GB 显存用户。使用 QLoRA、4-bit 量化、batch size 为 1、梯度累积和 gradient checkpointing，通常可以在 RTX 4060 8GB 上进行小规模微调实验。"}
+{"instruction": "Ollama 适合用来微调模型吗？", "input": "", "output": "Ollama 更适合本地模型部署、推理和 API 调用，不适合作为主要微调框架。真正学习微调时，更推荐使用 PyTorch、Transformers、PEFT、TRL 和 bitsandbytes 等工具。"}
+{"instruction": "Ollama 和 Transformers 有什么区别？", "input": "", "output": "Ollama 更像一个本地模型运行和管理工具，适合快速部署和调用模型。Transformers 则是模型研究和训练框架，适合手动加载模型、理解 tokenizer、控制推理参数，以及进行微调和实验。"}
+{"instruction": "为什么初学者可以先用 Ollama 再用 Transformers？", "input": "", "output": "Ollama 可以帮助初学者快速体验本地大模型，建立直觉；Transformers 则可以进一步暴露 tokenizer、模型加载、生成参数、量化和微调等细节。先 Ollama 后 Transformers 是比较平滑的学习路径。"}
+{"instruction": "请给出在 RTX 4060 8GB 上微调 Qwen2.5-3B 的建议参数。", "input": "", "output": "建议使用 QLoRA，load_in_4bit=True，per_device_train_batch_size=1，gradient_accumulation_steps=8，max_seq_length=512 或 1024，LoRA r 设置为 4 或 8，learning_rate 从 5e-5 到 1e-4 尝试，num_train_epochs 设置为 1 到 3。"}
+{"instruction": "如果 LoRA 微调后回答变差，应该优先检查什么？", "input": "", "output": "应该优先检查训练数据质量、数据量、是否存在错误答案、训练 epoch 是否过多、learning rate 是否过大、推理时 temperature 是否过高，以及是否使用固定评测集进行对比。"}
+{"instruction": "如何让模型更稳定地回答 LoRA 的定义？", "input": "", "output": "可以在训练数据中加入多种关于 LoRA 的问法和纠错样本，例如询问 LoRA 全称、中文翻译、核心公式、与全参数微调区别，以及明确指出 Lightweight Recursive Operator Allocation 是错误说法。同时推理时使用 do_sample=False。"}
+{"instruction": "请解释为什么微调不是简单地把模型变聪明。", "input": "", "output": "微调的本质是让模型适应特定数据分布，而不是凭空增加通用智能。如果数据质量高且任务明确，模型会在目标任务上变好；如果数据少、错误多或训练设置不当，模型可能变差。因此微调需要数据、参数和评测共同配合。"}
+{"instruction": "请给初学者解释一次完整的 QLoRA 微调流程。", "input": "", "output": "完整流程包括：准备 JSONL 指令数据；加载 tokenizer；用 bitsandbytes 以 4-bit 加载基础模型；调用 prepare_model_for_kbit_training；配置 LoRAConfig；使用 get_peft_model 插入 LoRA adapter；设置 TrainingArguments；用 SFTTrainer 训练；保存 adapter；推理时重新加载基础模型并用 PeftModel 加载 adapter。"}
+

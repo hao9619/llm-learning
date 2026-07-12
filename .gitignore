@@ -1,0 +1,196 @@
+# =========================
+# Python cache
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+
+# =========================
+# Virtual environments
+# =========================
+
+.venv/
+venv/
+env/
+ENV/
+.qwen_lora/
+conda-meta/
+
+
+# =========================
+# Jupyter Notebook
+# =========================
+
+.ipynb_checkpoints/
+
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+logs/
+log/
+
+
+# =========================
+# TensorBoard / experiment logs
+# =========================
+
+runs/
+wandb/
+lightning_logs/
+tensorboard/
+
+
+# =========================
+# HuggingFace / model cache
+# =========================
+
+.cache/huggingface/
+.cache/torch/
+huggingface/
+hf_cache/
+transformers_cache/
+datasets_cache/
+
+
+# =========================
+# Model weights and checkpoints
+# =========================
+
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.gguf
+*.ggml
+*.onnx
+
+checkpoint-*/
+checkpoints/
+models/
+model/
+weights/
+
+
+# =========================
+# Training outputs
+# =========================
+
+outputs/
+output/
+results/
+experiments/
+exp/
+
+
+# =========================
+# LoRA / PEFT adapters
+# =========================
+
+adapter_model.safetensors
+adapter_model.bin
+adapter_config.json
+
+
+# =========================
+# Dataset generated files
+# =========================
+
+data/train_ai_tutor_generated.jsonl
+data/train_final.jsonl
+data/eval_results_lora.md
+
+
+# =========================
+# Optional large datasets
+# =========================
+
+data/raw/
+data/processed/
+data/cache/
+datasets/
+
+
+# =========================
+# Keep manually written small examples if needed
+# =========================
+
+# If you want to keep these files in git, do not ignore them:
+# data/train.jsonl
+# data/train_v2.jsonl
+# data/eval_questions.txt
+
+
+# =========================
+# Environment files
+# =========================
+
+.env
+.env.*
+*.env
+
+
+# =========================
+# Package / build
+# =========================
+
+build/
+dist/
+*.egg-info/
+
+
+# =========================
+# Temporary files
+# =========================
+
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+
+# =========================
+# VS Code Python / local settings
+# =========================
+
+.python-version
+
+
+# =========================
+# Ollama local files
+# Usually Ollama stores models outside the project,
+# but ignore them if accidentally placed here.
+# =========================
+
+.ollama/
+ollama/
