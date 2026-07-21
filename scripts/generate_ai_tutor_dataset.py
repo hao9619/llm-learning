@@ -1,9 +1,10 @@
 import json
 import random
 from pathlib import Path
+from root_address import root_address
 
-
-OUTPUT_PATH = Path.home() / "Hao9619" / "llm-learning" / "data" / "train_ai_tutor_generated.jsonl"
+root_address = Path(root_address)
+OUTPUT_PATH = root_address / "llm-learning" / "data" / "train_ai_tutor_generated.jsonl"
 
 
 concepts = [

@@ -1,6 +1,7 @@
 import os
 import argparse
 import torch
+from root_address import root_address
 
 from transformers import (
     AutoTokenizer,
@@ -22,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--adapter_path",
         type=str,
-        default=os.path.expanduser("~/llm-learning/outputs/qwen2.5-3b-lora-multigpu"),
+        default=os.path.expanduser(root_address+"/llm-learning/outputs/qwen2.5-3b-lora-multigpu"),
         help="Path to trained LoRA adapter.",
     )
     parser.add_argument(

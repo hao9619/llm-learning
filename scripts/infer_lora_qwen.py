@@ -2,7 +2,7 @@ import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
-
+from root_address import root_address
 
 def generate_response(model, tokenizer, user_input):
     messages = [
@@ -57,7 +57,7 @@ def main():
 
     # 保存 QLoRA adapter 的目录
     lora_path = os.path.expanduser(
-        "~/Hao9619/llm-learning/outputs/qwen2.5-3b-qlora"
+        root_address+"/Hao9619/llm-learning/outputs/qwen2.5-3b-qlora"
     )
 
     print("Base model:", base_model_name)

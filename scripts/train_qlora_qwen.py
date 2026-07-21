@@ -1,6 +1,7 @@
 import os
 import torch
 from datasets import load_dataset
+from root_address import root_address
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -56,11 +57,11 @@ def main():
     model_name = "Qwen/Qwen2.5-3B-Instruct"
 
     data_path = os.path.expanduser(
-        "~/Hao9619/llm-learning/data/train.jsonl"
+        root_address+"/llm-learning/data/train.jsonl"
     )
 
     output_dir = os.path.expanduser(
-        "~/Hao9619/llm-learning/outputs/qwen2.5-3b-qlora"
+        root_address+"/llm-learning/outputs/qwen2.5-3b-qlora"
     )
 
     os.makedirs(output_dir, exist_ok=True)

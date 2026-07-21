@@ -1,7 +1,7 @@
 import os
 import argparse
 import torch
-
+from root_address import root_address
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
@@ -29,13 +29,13 @@ def parse_args():
     parser.add_argument(
         "--train_file",
         type=str,
-        default=os.path.expanduser("~/llm-learning/data/train_final.jsonl"),
+        default=os.path.expanduser(root_address+"/llm-learning/data/train_final.jsonl"),
         help="Training JSONL file. Each line should contain instruction/input/output.",
     )
     parser.add_argument(
         "--output_dir",
         type=str,
-        default=os.path.expanduser("~/llm-learning/outputs/qwen2.5-3b-lora-multigpu"),
+        default=os.path.expanduser(root_address+"/llm-learning/outputs/qwen2.5-3b-lora-multigpu"),
         help="Output directory for LoRA adapter.",
     )
 
