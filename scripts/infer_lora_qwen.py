@@ -55,7 +55,7 @@ def main():
 
     base_model_name = "Qwen/Qwen2.5-3B-Instruct"
 
-    # 注意：这里要改成你实际保存 QLoRA adapter 的目录
+    # 保存 QLoRA adapter 的目录
     lora_path = os.path.expanduser(
         "~/Hao9619/llm-learning/outputs/qwen2.5-3b-qlora"
     )

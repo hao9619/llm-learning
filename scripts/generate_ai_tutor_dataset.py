@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 
 
-OUTPUT_PATH = Path.home() / "llm-learning" / "data" / "train_ai_tutor_generated.jsonl"
+OUTPUT_PATH = Path.home() / "Hao9619" / "llm-learning" / "data" / "train_ai_tutor_generated.jsonl"
 
 
 concepts = [
