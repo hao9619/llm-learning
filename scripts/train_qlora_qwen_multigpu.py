@@ -228,7 +228,7 @@ def main():
         report_to="tensorboard",
         logging_dir=os.path.join(args.output_dir, "logs"),
 
-        remove_unused_columns=False,
+        remove_unused_columns=True,
 
         dataloader_num_workers=2,
         dataloader_pin_memory=True,
