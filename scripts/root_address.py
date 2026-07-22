@@ -1,1 +1,1 @@
-root_address: str = "~/Hao9619"
+root_address: str = "/home/hao/Hao9619"

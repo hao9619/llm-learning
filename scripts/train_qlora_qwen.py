@@ -54,7 +54,7 @@ def main():
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-    model_name = "Qwen/Qwen2.5-3B-Instruct"
+    model_name = root_address+"/models/Qwen2.5-3B-Instruct"
 
     data_path = os.path.expanduser(
         root_address+"/llm-learning/data/train.jsonl"

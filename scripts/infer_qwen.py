@@ -1,14 +1,14 @@
 import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
+from root_address import root_address
 
 def main():
     # 强制 Hugging Face / Transformers 使用离线模式
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-    model_name = "Qwen/Qwen2.5-3B-Instruct"
+    model_name = root_address+"/models/Qwen2.5-3B-Instruct"
 
     print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(

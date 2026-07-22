@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument(
         "--base_model",
         type=str,
-        default="Qwen/Qwen2.5-3B-Instruct",
+        default=root_address+"/models/Qwen2.5-3B-Instruct",
         help="Base model path or HuggingFace model id.",
     )
     parser.add_argument(
