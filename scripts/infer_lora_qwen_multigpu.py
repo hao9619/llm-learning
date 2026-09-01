@@ -1,14 +1,26 @@
+# -*- coding: utf-8 -*-
+"""
+LoRA 微调模型多轮对话（多卡 / 可选量化）
+
+相比 infer_lora_qwen.py，这里把模型路径、精度、设备分配、生成参数
+全部做成了命令行参数，方便在不同机器上跑。
+
+上下文管理、斜杠命令都在 chat_cli.py 里，本文件只负责把模型加载好。
+"""
+
 import os
 import argparse
-import torch
-from root_address import root_address
 
+import torch
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     BitsAndBytesConfig,
 )
 from peft import PeftModel
+
+from root_address import root_address
+from chat_cli import run_chat_cli
 
 
 def parse_args():
@@ -50,6 +62,12 @@ def parse_args():
         help='Device map, e.g. "auto", "cuda:0".',
     )
     parser.add_argument(
+        "--max_context_tokens",
+        type=int,
+        default=2048,
+        help="上下文预算：历史最多占多少 token，超出后丢弃最旧的对话。",
+    )
+    parser.add_argument(
         "--max_new_tokens",
         type=int,
         default=512,
@@ -58,6 +76,7 @@ def parse_args():
         "--temperature",
         type=float,
         default=0.7,
+        help="设为 0 表示关闭采样，做知识问答评测时推荐。",
     )
     parser.add_argument(
         "--top_p",
@@ -89,17 +108,22 @@ def get_torch_dtype(dtype: str):
         raise ValueError(f"Unsupported dtype: {dtype}")
 
 
-def build_messages(system_prompt: str, user_prompt: str):
-    return [
-        {
-            "role": "system",
-            "content": system_prompt,
-        },
-        {
-            "role": "user",
-            "content": user_prompt,
-        },
-    ]
+def build_gen_config(args):
+    """把命令行参数翻译成 model.generate 的关键字参数。"""
+    do_sample = args.temperature > 0
+
+    gen_config = {
+        "max_new_tokens": args.max_new_tokens,
+        "do_sample": do_sample,
+        "repetition_penalty": args.repetition_penalty,
+    }
+
+    # 关闭采样时不能再传 temperature / top_p，否则会有警告
+    if do_sample:
+        gen_config["temperature"] = args.temperature
+        gen_config["top_p"] = args.top_p
+
+    return gen_config
 
 
 def load_model_and_tokenizer(args):
@@ -141,58 +165,14 @@ def load_model_and_tokenizer(args):
         args.adapter_path,
     )
 
-    model.eval()
-
     return model, tokenizer
-
-
-@torch.no_grad()
-def generate_answer(model, tokenizer, args, user_prompt: str):
-    messages = build_messages(args.system_prompt, user_prompt)
-
-    prompt = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-    )
-
-    first_device = next(model.parameters()).device
-    inputs = {k: v.to(first_device) for k, v in inputs.items()}
-
-    do_sample = args.temperature > 0
-
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=args.max_new_tokens,
-        do_sample=do_sample,
-        temperature=args.temperature if do_sample else None,
-        top_p=args.top_p if do_sample else None,
-        repetition_penalty=args.repetition_penalty,
-        eos_token_id=tokenizer.eos_token_id,
-        pad_token_id=tokenizer.pad_token_id,
-    )
-
-    input_length = inputs["input_ids"].shape[1]
-    generated_ids = outputs[0][input_length:]
-
-    answer = tokenizer.decode(
-        generated_ids,
-        skip_special_tokens=True,
-    )
-
-    return answer.strip()
 
 
 def main():
     args = parse_args()
 
     print("=" * 80)
-    print("Qwen2.5 LoRA Inference")
+    print("Qwen2.5 LoRA Chat")
     print("=" * 80)
     print(f"Base model: {args.base_model}")
     print(f"Adapter path: {args.adapter_path}")
@@ -200,31 +180,18 @@ def main():
     print(f"4bit: {args.load_in_4bit}")
     print(f"8bit: {args.load_in_8bit}")
     print(f"dtype: {args.dtype}")
+    print(f"Max context tokens: {args.max_context_tokens}")
     print("=" * 80)
 
     model, tokenizer = load_model_and_tokenizer(args)
 
-    print("模型加载完成。输入问题开始对话，输入 exit / quit 退出。")
-
-    while True:
-        user_prompt = input("\nUser: ").strip()
-
-        if user_prompt.lower() in ["exit", "quit", "q"]:
-            print("退出。")
-            break
-
-        if not user_prompt:
-            continue
-
-        answer = generate_answer(
-            model=model,
-            tokenizer=tokenizer,
-            args=args,
-            user_prompt=user_prompt,
-        )
-
-        print("\nAssistant:")
-        print(answer)
+    run_chat_cli(
+        model=model,
+        tokenizer=tokenizer,
+        system_prompt=args.system_prompt,
+        max_context_tokens=args.max_context_tokens,
+        gen_config=build_gen_config(args),
+    )
 
 
 if __name__ == "__main__":

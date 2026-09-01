@@ -1,52 +1,24 @@
+# -*- coding: utf-8 -*-
+"""
+LoRA 微调模型多轮对话（单卡）
+
+加载 4bit 基座模型 + QLoRA 训练出来的 adapter，然后进入多轮对话。
+
+上下文管理、斜杠命令都在 chat_cli.py 里，本文件只负责把模型加载好。
+"""
+
 import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
+
 from root_address import root_address
+from chat_cli import run_chat_cli
 
-def generate_response(model, tokenizer, user_input):
-    messages = [
-        {
-            "role": "system",
-            "content": "你是一个专业、严谨、耐心的人工智能学习助手。"
-        },
-        {
-            "role": "user",
-            "content": user_input
-        }
-    ]
 
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
-
-    inputs = tokenizer(
-        [text],
-        return_tensors="pt"
-    ).to(model.device)
-
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=512,
-            do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
-            repetition_penalty=1.05,
-            pad_token_id=tokenizer.pad_token_id,
-            eos_token_id=tokenizer.eos_token_id
-        )
-
-    generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
-
-    response = tokenizer.decode(
-        generated_ids,
-        skip_special_tokens=True
-    )
-
-    return response.strip()
+# 历史最多占多少 token，超出后自动丢弃最旧的一轮对话。
+# 显存紧张时调小，想让模型记更久就调大。
+MAX_CONTEXT_TOKENS = 2048
 
 
 def main():
@@ -106,24 +78,13 @@ def main():
         local_files_only=True
     )
 
-    model.eval()
-
-    print("\n加载完成，可以开始对话。输入 exit / quit / q 退出。")
-
-    while True:
-        user_input = input("\n用户：").strip()
-
-        if user_input.lower() in ["exit", "quit", "q"]:
-            print("退出。")
-            break
-
-        if not user_input:
-            continue
-
-        response = generate_response(model, tokenizer, user_input)
-
-        print("\n助手：")
-        print(response)
+    # 训练时用的系统提示词，推理时保持一致，模型表现才稳定
+    run_chat_cli(
+        model=model,
+        tokenizer=tokenizer,
+        system_prompt="你是一个专业、严谨、耐心的人工智能学习助手。",
+        max_context_tokens=MAX_CONTEXT_TOKENS,
+    )
 
 
 if __name__ == "__main__":

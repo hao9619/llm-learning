@@ -45,6 +45,9 @@ llm-learning/
 │   ├── ollama_api_test.py
 │   ├── infer_qwen.py
 │   ├── infer_qwen_4bit.py
+│   ├── chat_session.py
+│   ├── chat_cli.py
+│   ├── chat_qwen.py
 │   ├── train_qlora_qwen.py
 │   ├── infer_lora_qwen.py
 │   ├── evaluate_lora.py
@@ -403,6 +406,68 @@ python ~/llm-learning/scripts/generate_ai_tutor_dataset.py
 
 ---
 
+## 4.8 `chat_qwen.py`
+
+作用：
+
+```text
+基座模型多轮对话。维护上下文，模型能记住之前说过的话。
+```
+
+运行：
+
+```bash
+python scripts/chat_qwen.py                 # FP16 加载
+python scripts/chat_qwen.py --load_in_4bit  # 4bit 加载，8GB 显存推荐
+```
+
+和 `infer_qwen.py` 的区别：
+
+```text
+infer_qwen.py  问一句答一句，答完就忘，是最小推理示例
+chat_qwen.py   把历史一起送进模型，是能连续聊天的对话应用
+```
+
+---
+
+## 4.9 `chat_session.py`
+
+作用：
+
+```text
+对话上下文管理。被所有对话脚本复用，不单独运行。
+```
+
+职责：
+
+```text
+1. 记录多轮历史
+2. 上下文超出预算时，按轮丢弃最旧的对话
+3. 把历史渲染成模型输入的 prompt
+```
+
+---
+
+## 4.10 `chat_cli.py`
+
+作用：
+
+```text
+命令行对话循环。被所有对话脚本复用，不单独运行。
+```
+
+职责：
+
+```text
+1. 读取用户输入
+2. 分派斜杠命令
+3. 调用模型生成回答并记入历史
+```
+
+详见第 11 节。
+
+---
+
 # 5. 常用命令汇总
 
 ## 5.1 Ollama 命令
@@ -545,6 +610,12 @@ LoRA 微调模型推理：
 
 ```bash
 python ~/llm-learning/scripts/infer_lora_qwen.py
+```
+
+基座模型多轮对话：
+
+```bash
+python ~/llm-learning/scripts/chat_qwen.py --load_in_4bit
 ```
 
 ---
@@ -1275,3 +1346,164 @@ LoRA adapter 保存与加载
 更系统的评测集
 更严格的错误分析
 ```
+
+---
+
+# 11. 多轮对话与上下文管理
+
+## 11.1 单轮推理与多轮对话的区别
+
+`infer_qwen.py` 这类脚本每次只把当前这一句送进模型：
+
+```python
+messages = [system, user]
+```
+
+模型没有任何记忆。你问「什么是 LoRA」，再问「它为什么省显存」，
+模型不知道「它」指的是谁。
+
+多轮对话把历史一起送进去：
+
+```python
+messages = [system, user1, assistant1, user2, assistant2, ..., user_now]
+```
+
+模型看到完整的对话记录，才能理解指代、追问和上下文。
+
+---
+
+## 11.2 为什么需要上下文管理
+
+历史不能无限增长：
+
+```text
+1. 序列越长，显存占用越大、生成越慢
+2. 模型有最大长度限制，超了会报错或被粗暴截断
+```
+
+所以需要一个「上下文预算」，超出时丢掉最旧的内容。
+这件事由 `scripts/chat_session.py` 的 `ChatSession` 负责。
+
+---
+
+## 11.3 截断策略
+
+`ChatSession.trim()` 的规则：
+
+```text
+1. 系统提示词永远保留，不参与丢弃
+2. 按「轮」丢弃，一次丢掉配对的 user + assistant
+3. 用户刚提的这个问题永远保留
+```
+
+第 2 条很重要。如果只丢 `user`：
+
+```text
+留下一个没有提问的回答
+```
+
+如果只丢 `assistant`：
+
+```text
+留下一个没有回答的提问
+```
+
+这两种残缺历史都会让模型困惑，甚至学着不回答问题。
+
+如果单条消息本身就超过预算，`trim()` 不会把它丢掉，
+而是保持不动，交给模型自身的截断逻辑处理。
+
+---
+
+## 11.4 对话中可用的命令
+
+| 命令 | 作用 |
+|---|---|
+| `/help` | 显示帮助 |
+| `/clear` | 清空对话历史，开始新对话 |
+| `/history` | 查看当前上下文里的全部消息 |
+| `/undo` | 撤销上一轮（用户提问 + 模型回答） |
+| `/system` | 查看系统提示词 |
+| `/system <文本>` | 修改系统提示词，历史保留 |
+| `/tokens` | 查看当前上下文占用了多少 token |
+| `/save <文件>` | 把当前对话存成 JSON |
+| `/load <文件>` | 从 JSON 恢复对话 |
+| `exit` / `quit` / `q` | 退出 |
+
+命令只改动本地状态，不会送进模型，也就不消耗上下文。
+
+`/history` 和 `/tokens` 在调试时特别有用：
+可以直接看到模型此刻到底「记得」什么、还剩多少预算。
+
+---
+
+## 11.5 上下文预算参数
+
+| 脚本 | 参数 | 默认值 |
+|---|---|---:|
+| `chat_qwen.py` | `--max_context_tokens` | `2048` |
+| `infer_lora_qwen_multigpu.py` | `--max_context_tokens` | `2048` |
+| `infer_lora_qwen.py` | 文件顶部的 `MAX_CONTEXT_TOKENS` | `2048` |
+
+注意区分两个长度参数：
+
+```text
+max_context_tokens  管「输入能有多长」，即历史最多占多少 token
+max_new_tokens      管「输出能有多长」，即单次回答最多生成多少 token
+```
+
+两者相加不要超过模型的最大长度（Qwen2.5-3B 是 32768）。
+
+这两个数字直接决定推理时 KV cache 占多少显存，原理见《技术文档.md》第 18 节。
+
+显存紧张时调小 `max_context_tokens`，想让模型记更久就调大：
+
+```bash
+python scripts/chat_qwen.py --load_in_4bit --max_context_tokens 1024
+```
+
+---
+
+## 11.6 代码结构
+
+```text
+chat_session.py   上下文管理，只依赖 tokenizer，不关心模型
+chat_cli.py       对话循环和命令分派，只关心「已经加载好的模型」
+chat_qwen.py                  基座模型      -> 加载模型后调 run_chat_cli
+infer_lora_qwen.py            4bit + LoRA   -> 加载模型后调 run_chat_cli
+infer_lora_qwen_multigpu.py   多卡 + LoRA   -> 加载模型后调 run_chat_cli
+```
+
+三个推理脚本各自只负责模型怎么加载，加载完都是同一行：
+
+```python
+run_chat_cli(model, tokenizer)
+```
+
+所以改一处上下文逻辑，三个脚本同时生效。
+
+---
+
+## 11.7 还没有实现的功能
+
+以下是商用对话应用常见、但本工程刻意没做的功能：
+
+```text
+流式输出（打字机效果）
+对话历史摘要压缩（丢弃改为总结）
+多会话管理与切换
+检索增强（RAG）
+函数调用 / 工具使用
+并发多用户服务
+```
+
+保持简单是为了让核心流程读得懂。
+需要时可以在 `chat_cli.py` 的基础上继续扩展。
+
+延伸阅读：
+
+```text
+《技术文档.md》第 18 节      KV cache、prefill/decode、上下文长度与显存
+《多卡技术文档.md》第 10 节  多卡下 KV cache 怎么分布，长上下文 OOM 怎么排查
+```
+
