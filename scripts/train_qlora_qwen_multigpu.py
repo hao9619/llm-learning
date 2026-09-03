@@ -7,14 +7,13 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     BitsAndBytesConfig,
-    TrainingArguments,
     set_seed,
 )
 from peft import (
     LoraConfig,
     prepare_model_for_kbit_training,
 )
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 
 
 def parse_args():
@@ -159,9 +158,7 @@ def main():
 
     model.config.use_cache = False
 
-    if args.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
-
+    # 梯度检查点由 prepare_model_for_kbit_training 统一开启，不要重复调用
     model = prepare_model_for_kbit_training(
         model,
         use_gradient_checkpointing=args.gradient_checkpointing,
@@ -200,7 +197,9 @@ def main():
         print("Sample formatted data:")
         print(train_dataset[0]["text"][:1000])
 
-    training_args = TrainingArguments(
+    # SFTConfig 继承自 TrainingArguments，额外多了 SFT 专用的字段
+    # （dataset_text_field / max_length / packing）
+    training_args = SFTConfig(
         output_dir=args.output_dir,
 
         per_device_train_batch_size=args.per_device_train_batch_size,
@@ -222,6 +221,8 @@ def main():
         optim="paged_adamw_8bit",
 
         gradient_checkpointing=args.gradient_checkpointing,
+        # DDP + LoRA 下必须关掉 reentrant，否则反向传播会报参数未使用
+        gradient_checkpointing_kwargs={"use_reentrant": False},
 
         ddp_find_unused_parameters=False,
 
@@ -234,17 +235,19 @@ def main():
         dataloader_pin_memory=True,
 
         save_safetensors=True,
+
+        # 以下三个是 SFT 专用参数，新版 TRL 要求写在 SFTConfig 里
+        dataset_text_field="text",
+        max_length=args.max_seq_length,
+        packing=False,
     )
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
         args=training_args,
         train_dataset=train_dataset,
         peft_config=lora_config,
-        dataset_text_field="text",
-        max_seq_length=args.max_seq_length,
-        packing=False,
+        processing_class=tokenizer,
     )
 
     trainer.train()
