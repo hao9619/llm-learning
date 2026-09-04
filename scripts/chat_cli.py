@@ -100,6 +100,10 @@ def print_prompt(session):
     print(f"\n--- 送进模型的完整输入（{session.count_tokens()} token）---")
     print(prompt)
     print("--- 输入结束 ---")
+    print("末尾的 <|im_start|>assistant 是「生成提示符」，模型从这里往下续写。")
+    if session.history and session.history[-1]["role"] == "assistant":
+        print("（此刻没有待回答的提问，所以它紧跟在上一条回答后面；"
+              "真正提问时，你的问题会插在这两者中间。）")
 
 
 def handle_command(session, line):
