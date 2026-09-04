@@ -1426,6 +1426,7 @@ messages = [system, user1, assistant1, user2, assistant2, ..., user_now]
 | `/system` | 查看系统提示词 |
 | `/system <文本>` | 修改系统提示词，历史保留 |
 | `/tokens` | 查看当前上下文占用了多少 token |
+| `/prompt` | 打印这一轮将要送进模型的完整原始文本 |
 | `/save <文件>` | 把当前对话存成 JSON |
 | `/load <文件>` | 从 JSON 恢复对话 |
 | `exit` / `quit` / `q` | 退出 |
@@ -1434,6 +1435,30 @@ messages = [system, user1, assistant1, user2, assistant2, ..., user_now]
 
 `/history` 和 `/tokens` 在调试时特别有用：
 可以直接看到模型此刻到底「记得」什么、还剩多少预算。
+
+如果怀疑「模型好像没读到上下文」，用 `/prompt`。
+它打印的是**一字不差送进模型的那串文本**，
+包括平时被 `skip_special_tokens` 隐藏掉的 `<|im_start|>` 等标记：
+
+```text
+用户：/prompt
+
+--- 送进模型的完整输入（86 token）---
+<|im_start|>system
+你是一个专业、严谨、耐心的人工智能学习助手。<|im_end|>
+<|im_start|>user
+什么是 LoRA<|im_end|>
+<|im_start|>assistant
+LoRA 是一种参数高效微调方法……<|im_end|>
+<|im_start|>user
+它和 QLoRA 有什么区别<|im_end|>
+<|im_start|>assistant
+--- 输入结束 ---
+```
+
+如果这里能看到完整历史，说明上下文送到了，
+模型答得不好就是模型自身的问题（比如微调数据全是单轮），
+而不是上下文管理的问题。
 
 ---
 

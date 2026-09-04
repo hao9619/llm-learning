@@ -29,6 +29,7 @@ HELP_TEXT = """
   /system          查看系统提示词
   /system <文本>   修改系统提示词（历史保留）
   /tokens          查看当前上下文占用了多少 token
+  /prompt          打印这一轮将要送进模型的完整原始文本
   /save <文件>     把当前对话存成 JSON
   /load <文件>     从 JSON 恢复对话
   exit / quit / q  退出
@@ -86,6 +87,21 @@ def print_history(session):
         print(f"\n[{i}] {role}：{message['content']}")
 
 
+def print_prompt(session):
+    """打印真正送进模型的那串文本。
+
+    用来回答「模型到底有没有读到上下文」这个问题：
+    这里打印的是什么，模型看到的就是什么，一个字不差。
+    注意特殊标记（<|im_start|> 等）平时是被 skip_special_tokens 隐藏掉的，
+    只有在这里才看得见。
+    """
+    prompt = session.render_prompt()
+
+    print(f"\n--- 送进模型的完整输入（{session.count_tokens()} token）---")
+    print(prompt)
+    print("--- 输入结束 ---")
+
+
 def handle_command(session, line):
     """
     处理一条以 / 开头的命令。
@@ -125,6 +141,9 @@ def handle_command(session, line):
             f"当前上下文 {used} / {session.max_context_tokens} token，"
             f"共 {len(session.history)} 条历史消息"
         )
+
+    elif cmd == "/prompt":
+        print_prompt(session)
 
     elif cmd == "/save":
         if not arg:
